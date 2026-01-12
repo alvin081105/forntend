@@ -7,14 +7,14 @@ interface AdminSurveyProps {
   onConfirm: (tag: 'ADOPT' | 'REJECT' | 'END') => void;
 }
 
-const SurveyModel: React.FC<AdminSurveyProps> = ({ onCancel, onConfirm }) => {
+const AdminSurveyModel: React.FC<AdminSurveyProps> = ({ onCancel, onConfirm }) => {
   // 기본값을 '종료(END)'로 설정
   const [selectedTag, setSelectedTag] = useState<'ADOPT' | 'REJECT' | 'END'>('END');
 
   const tagLabels = [
     { label: '채택', value: 'ADOPT' },
     { label: '반려', value: 'REJECT' },
-    { label: '단순 종료', value: 'END' },
+    { label: '종료', value: 'END' },
   ];
 
   return (
@@ -56,4 +56,4 @@ const SurveyModel: React.FC<AdminSurveyProps> = ({ onCancel, onConfirm }) => {
   );
 };
 
-export default SurveyModel;
+export default AdminSurveyModel;

@@ -6,6 +6,8 @@ import Home from './pages/Home';
 import UserProfile from './pages/UserProfile';
 import ChangePassword from './pages/ChangePassword';
 import MyChat from './pages/chat/MyChat';
+import AdminChat from './pages/admin/AdminChat';
+import AdminChatList from './pages/chat/AdminChatList';
 
 function App() {
   return (
@@ -19,7 +21,9 @@ function App() {
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/my-chat" element={<MyChat />} />
+        <Route path="/admin-chat" element={<AdminChat />} />
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/admin-chatList" element={<AdminChatList />} />
       </Routes>
     </BrowserRouter>
   );
