@@ -52,11 +52,7 @@ export async function patchChatReaction(
       'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
-<<<<<<< Updated upstream
     body: JSON.stringify({ chatRoomId, reactionType }),
-=======
-    body: JSON.stringify({ chatRoomId,reactionType }),
->>>>>>> Stashed changes
   });
 
   const text = await res.text();
