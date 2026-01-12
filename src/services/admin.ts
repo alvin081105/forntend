@@ -120,3 +120,50 @@ export async function updateAdminUser(
     throw new Error(result?.message || '회원 정보 수정에 실패했습니다.');
   }
 }
+
+
+/* =========================
+   관리자 채팅 목록 조회
+========================= */
+export async function getAdminChats(params: {
+  dateFilter?: 'RECENT' | 'OLDEST';
+  chatTags?: 'IN_PROGRESS' | 'ADOPT' | 'REJECT' | 'END';
+  page?: number;
+  size?: number;
+}) {
+  const accessToken = localStorage.getItem('accessToken');
+  if (!accessToken) {
+    throw new Error('인증이 필요합니다.');
+  }
+
+  const query = new URLSearchParams();
+  if (params.dateFilter) query.append('dateFilter', params.dateFilter);
+  if (params.chatTags) query.append('chatTags', params.chatTags);
+  if (params.page !== undefined) query.append('page', String(params.page));
+  if (params.size !== undefined) query.append('size', String(params.size));
+
+  const res = await fetch(
+    `${API_BASE}/api/admin/chats?${query.toString()}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  const text = await res.text();
+  let result;
+
+  try {
+    result = text ? JSON.parse(text) : undefined;
+  } catch {
+    throw new Error('서버 응답 데이터 형식이 올바르지 않습니다.');
+  }
+
+  if (!result || !res.ok || !result.success) {
+    throw new Error(result?.message || '채팅 목록 조회에 실패했습니다.');
+  }
+
+  return result.data;
+}
