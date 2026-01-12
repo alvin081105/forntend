@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import UserProfile from './pages/UserProfile';
 import ChangePassword from './pages/ChangePassword';
 import Students from './pages/Students';
+import SurveyModal from './components/SurveyModel';
 
 // 관리자 페이지
 import AdminUserEdit from './pages/admin/AdminUserEdit';
@@ -33,6 +34,7 @@ function App() {
 
         {/* 잘못된 경로 */}
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path='/chat-setting' element={<SurveyModal />} />
       </Routes>
     </BrowserRouter>
   );
