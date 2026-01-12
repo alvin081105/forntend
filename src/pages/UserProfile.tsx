@@ -134,10 +134,14 @@ export default function UserProfile() {
       if (refreshToken) {
         await logoutService(refreshToken);
       }
-      logout();
-      navigate('/');
     } catch (err: any) {
-      alert(err.message || '로그아웃에 실패했습니다.');
+      // 로그아웃 API 실패해도 로컬에서 로그아웃 처리
+      console.error('로그아웃 API 실패:', err);
+    } finally {
+      // API 성공/실패와 관계없이 로컬 로그아웃 처리
+      logout();
+      // 상태 업데이트 후 홈으로 이동
+      navigate('/', { replace: true });
     }
   };
 

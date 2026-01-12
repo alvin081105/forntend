@@ -7,7 +7,7 @@ import './ChangePassword.css';
 
 export default function ChangePassword() {
   const navigate = useNavigate();
-  const { isLoggedIn, userId } = useAuth();
+  const { isLoggedIn } = useAuth();
   const [formData, setFormData] = useState({
     oldPassword: '',
     newPassword: '',
@@ -56,18 +56,13 @@ export default function ChangePassword() {
       return;
     }
 
-    if (!userId) {
-      alert('사용자 ID를 찾을 수 없습니다.');
-      return;
-    }
-
     setLoading(true);
     try {
-      await changePassword(userId, formData.oldPassword, formData.newPassword);
+      await changePassword(formData.oldPassword, formData.newPassword);
       alert('비밀번호가 성공적으로 변경되었습니다.');
       navigate('/profile');
     } catch (err: any) {
-      if (err.message.includes('기존 비밀번호') || err.message.includes('일치하지 않습니다')) {
+      if (err.message.includes('기존 비밀번호') || err.message.includes('일치하지 않습니다') || err.message.includes('currentPassword')) {
         setErrors({ oldPassword: '기존 비밀번호가 일치하지 않습니다.' });
       } else {
         alert(err.message || '비밀번호 변경에 실패했습니다.');

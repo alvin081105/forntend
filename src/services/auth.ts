@@ -103,18 +103,18 @@ export async function withdraw(userId: number, refreshToken: string): Promise<vo
   }
 }
 
-export async function changePassword(userId: number, oldPassword: string, newPassword: string): Promise<void> {
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
   const accessToken = localStorage.getItem('accessToken');
   if (!accessToken) {
     throw new Error('인증이 필요합니다.');
   }
-  const res = await fetch(`${API_BASE}/api/admin/password/${userId}`, {
+  const res = await fetch(`${API_BASE}/api/user/password`, {
     method: 'PATCH',
     headers: { 
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ newPassword }),
+    body: JSON.stringify({ currentPassword, newPassword }),
   });
   const text = await res.text();
   let result: ApiResponse<any> | undefined;
