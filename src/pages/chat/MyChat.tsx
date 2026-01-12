@@ -4,6 +4,7 @@ import SockJS from 'sockjs-client';
 import { Header } from '../../components';
 import ChatCreate from '../../components/ChatCreate';
 import ChatClose from '../../components/ChatClose'; 
+import { useAuth } from '../../contexts/AuthContext';
 import './styles/MyChat.css';
 // 1. SurveyModel로 임포트 파일명 수정
 import SurveyModel from '../../components/SurveyModel';
@@ -36,6 +37,8 @@ interface Message {
 }
 
 const MyChat = () => {
+  const { userId: myUserId } = useAuth();
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isChatCloseModalOpen, setIsChatCloseModalOpen] = useState(false);
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false);
@@ -286,25 +289,38 @@ const MyChat = () => {
                 </div>
               </header>
               
-              <div className="message-list" ref={scrollRef}>
-                {isMsgLoading ? (
-                  <p className="msg-status">메시지를 불러오는 중...</p>
-                ) : messages.length > 0 ? (
-                  messages.map((msg, idx) => (
-                    <div key={idx} className={`message-item ${msg.deleted ? 'deleted' : ''}`}>
-                      <div className="msg-bubble">
-                        <span className="sender-name">{msg.senderName}</span>
-                        <p className="msg-text">{msg.deleted ? '삭제된 메시지입니다.' : msg.message}</p>
-                        <span className="msg-date">
-                          {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="msg-status">대화 내용이 없습니다.</p>
-                )}
-              </div>
+             <div className="message-list" ref={scrollRef}>
+  {isMsgLoading ? (
+    <p className="msg-status">메시지를 불러오는 중...</p>
+  ) : messages.length > 0 ? (
+    messages.map((msg, idx) => {
+      // 1. 내 메시지인지 확인 (현재 로그인한 유저 ID와 메시지 발신자 ID 비교)
+      const isMine = msg.sender === myUserId;
+
+      return (
+        <div 
+          key={idx} 
+          className={`message-wrapper ${isMine ? 'mine' : 'others'} ${msg.deleted ? 'deleted' : ''}`}
+        >
+          <div className="msg-bubble">
+            {/* 2. 내가 아닐 때만 상대방 이름 표시 */}
+            {!isMine && <span className="sender-name">{msg.senderName}</span>}
+            
+            <p className="msg-text">
+              {msg.deleted ? '삭제된 메시지입니다.' : msg.message}
+            </p>
+            
+            <span className="msg-date">
+              {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            </span>
+          </div>
+        </div>
+      );
+    })
+  ) : (
+    <p className="msg-status">대화 내용이 없습니다.</p>
+  )}
+</div>
 
               <div className="chat-input-wrapper">
                 <form className="chat-input-container" onSubmit={handleSendMessage}>

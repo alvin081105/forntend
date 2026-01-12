@@ -3,6 +3,7 @@ import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { Header } from '../../components';
 import { useAuth } from '../../contexts/AuthContext';
+import AdminSurveyModel from '../../components/AdminSurveyModal';
 import './styles/AdminChat.css';
 
 interface Message {
@@ -13,15 +14,25 @@ interface Message {
   deleted: boolean;
 }
 
+interface ChatDetail {
+  chatRoomId: number;
+  title: string;
+  tag: string;
+  author: string;
+  studentNum: number;
+  createdAt: string;
+}
+
 const AdminChat = () => {
   const { userId: myUserId } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isMsgLoading, setIsMsgLoading] = useState(false);
+  const [chatDetail, setChatDetail] = useState<ChatDetail | null>(null);
+  const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false);
   
-  // 관리자용 화면에서는 특정 roomId를 props나 URL 파라미터로 받아오는 것이 일반적입니다.
-  // 여기서는 예시로 고정된 roomId 혹은 로직에 따른 ID를 사용한다고 가정합니다.
-  const selectedChatId = 1; // 실제 환경에선 URL 파라미터 등에서 추출하세요.
+  // 실제 환경에선 URL 파라미터(useParams) 등에서 추출하세요.
+  const selectedChatId = 5; 
 
   const stompClient = useRef<Client | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -51,8 +62,12 @@ const AdminChat = () => {
         stompClient.current?.subscribe(
           `/sub/chat/room/${roomId}`,
           (frame) => {
-            const newMessage = JSON.parse(frame.body);
-            setMessages((prev) => [...prev, newMessage]);
+            try {
+              const newMessage = JSON.parse(frame.body);
+              setMessages((prev) => [...prev, newMessage]);
+            } catch (error) {
+              console.error('[WebSocket] 파싱 에러:', error);
+            }
           },
           { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
         );
@@ -82,6 +97,19 @@ const AdminChat = () => {
     setInputValue('');
   };
 
+  // 상세 조회 (헤더 정보용)
+  const fetchChatDetail = async (roomId: number) => {
+    try {
+      const response = await fetch(`http://localhost:8081/api/chats/me/${roomId}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` },
+      });
+      const result = await response.json();
+      if (result.success) setChatDetail(result.data);
+    } catch (err) {
+      console.error('상세 조회 실패:', err);
+    }
+  };
+
   // 초기 메시지 내역 불러오기
   const fetchMessages = async (roomId: number) => {
     setIsMsgLoading(true);
@@ -99,8 +127,51 @@ const AdminChat = () => {
   };
 
   useEffect(() => {
-    if (selectedChatId) fetchMessages(selectedChatId);
+    if (selectedChatId) {
+      fetchChatDetail(selectedChatId);
+      fetchMessages(selectedChatId);
+    }
   }, [selectedChatId]);
+
+  // 종료 버튼 클릭 시 모달 열기
+  const handleExitClick = () => {
+    setIsSurveyModalOpen(true);
+  };
+
+  // SurveyModel에서 최종 tag 선택 시 호출되는 종료 API
+  const handleSurveyConfirm = async (tag: 'ADOPT' | 'REJECT' | 'END') => {
+    try {
+      const response = await fetch('http://localhost:8081/api/chats/close', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+        body: JSON.stringify({
+          chatRoomId: selectedChatId,
+          tag: tag
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert('채팅이 성공적으로 종료되었습니다.');
+        setIsSurveyModalOpen(false);
+        fetchChatDetail(selectedChatId); // 상태 갱신
+      }
+    } catch (err) {
+      console.error('종료 처리 에러:', err);
+    }
+  };
+
+  const getTagInfo = (tag: string) => {
+    switch (tag) {
+      case 'ADOPT': return { text: '채택됨', className: 'status-adopted' };
+      case 'REJECT': return { text: '반려됨', className: 'status-rejected' };
+      case 'END': return { text: '종료됨', className: 'status-end' };
+      default: return { text: '진행 중', className: 'status-ing' };
+    }
+  };
 
   return (
     <div className="admin-chat-page">
@@ -108,9 +179,34 @@ const AdminChat = () => {
       <div className="admin-chat-container">
         <main className="admin-chat-content">
           <div className="admin-chat-window">
-            <header className="admin-chat-header">
-              <h3 className="admin-header-title">관리자 채팅 모니터링</h3>
-              <span className="admin-badge">ADMIN MODE</span>
+            {/* MyChat과 동일한 구조의 헤더 */}
+            <header className="chat-header">
+              <div className="header-left">
+                <div className="header-top">
+                  <h3 className="header-title">{chatDetail?.title || '로딩 중...'}</h3>
+                  {chatDetail && (
+                    <span className={`chat-status-badge ${getTagInfo(chatDetail.tag).className}`}>
+                      {getTagInfo(chatDetail.tag).text}
+                    </span>
+                  )}
+                  <span className="admin-badge">ADMIN MODE</span>
+                </div>
+                {chatDetail && (
+                  <div className="header-bottom">
+                    <span className="author-info">
+                      작성자: {chatDetail.author} ({chatDetail.studentNum})
+                    </span>
+                    <span className="date-info">
+                      {new Date(chatDetail.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="header-right">
+                <button className="chat-exit-btn" onClick={handleExitClick}>
+                  종료
+                </button>
+              </div>
             </header>
 
             <div className="admin-message-list" ref={scrollRef}>
@@ -159,6 +255,14 @@ const AdminChat = () => {
           </div>
         </main>
       </div>
+
+      {/* SurveyModel 모달 추가 */}
+      {isSurveyModalOpen && (
+        <AdminSurveyModel 
+          onCancel={() => setIsSurveyModalOpen(false)}
+          onConfirm={handleSurveyConfirm}
+        />
+      )}
     </div>
   );
 };
